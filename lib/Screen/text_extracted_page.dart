@@ -50,25 +50,22 @@ class _TextExtractedPageState extends State<TextExtractedPage> {
     log(image.filePath!);
     final RecognizedText recognizedText = await textRecognizer.processImage(image);
 
-    controller.text = recognizedText.text;
+    final pattern = RegExp(r'[A-Z]{5}[0-9]{4}[A-Z]{1}');
+    for (final textBlock in recognizedText.blocks) {
+      final text = textBlock.text;
+      final match = pattern.firstMatch(text);
+      if (match != null) {
+        print("in regrex ");
+        controller.text = text;
+      }
+    }
+    if(controller.text == '')
+      controller.text = "not found";
+    // controller.text = recognizedText.text;
 
     //End processing state
     setState(() {
       _isLoading = false;
     });
   }
-
-  Future<String> _extractPANNumber(String imagePath) async {
-    // final image = FirebaseVisionImage.fromFilePath(imagePath);
-    // final textRecognizer = FirebaseVision.instance.textRecognizer();
-    // final visionText = await textRecognizer.processImage(image);
-    final pattern = RegExp(r'[A-Z]{5}[0-9]{4}[A-Z]{1}');
-    for (final textBlock in visionText.blocks) {
-      final text = textBlock.text;
-      final match = pattern.firstMatch(text);
-      if (match != null) {
-        return match.group(0);
-      }
-    }
-    return null;
 }
