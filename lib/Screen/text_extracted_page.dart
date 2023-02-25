@@ -5,7 +5,10 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 
 class TextExtractedPage extends StatefulWidget {
   final String? path;
-  const TextExtractedPage({Key? key, this.path}) : super(key: key);
+  final String type;
+
+  const TextExtractedPage({Key? key, this.path, required this.type})
+      : super(key: key);
 
   @override
   State<TextExtractedPage> createState() => _TextExtractedPageState();
@@ -19,6 +22,7 @@ class _TextExtractedPageState extends State<TextExtractedPage> {
   void initState() {
     super.initState();
     final InputImage inputImage = InputImage.fromFilePath(widget.path!);
+
     processImage(inputImage);
   }
 
@@ -28,16 +32,17 @@ class _TextExtractedPageState extends State<TextExtractedPage> {
         appBar: AppBar(title: const Text("Text Extracted Page")),
         body: _isLoading == true
             ? const Center(
-          child: CircularProgressIndicator(),
-        ) : Container(
-          padding: const EdgeInsets.all(20),
-          child: TextFormField(
-            maxLines: MediaQuery.of(context).size.height.toInt(),
-            controller: controller,
-            decoration: const InputDecoration(hintText: "Extracted Text goes here..."),
-          ),
-        )
-    );
+                child: CircularProgressIndicator(),
+              )
+            : Container(
+                padding: const EdgeInsets.all(20),
+                child: TextFormField(
+                  maxLines: MediaQuery.of(context).size.height.toInt(),
+                  controller: controller,
+                  decoration: const InputDecoration(
+                      hintText: "Extracted Text goes here..."),
+                ),
+              ));
   }
 
   void processImage(InputImage image) async {
@@ -48,20 +53,29 @@ class _TextExtractedPageState extends State<TextExtractedPage> {
     });
 
     log(image.filePath!);
-    final RecognizedText recognizedText = await textRecognizer.processImage(image);
+    final RecognizedText recognizedText =
+        await textRecognizer.processImage(image);
 
-    final pattern = RegExp(r'[A-Z]{5}[0-9]{4}[A-Z]{1}');
-    for (final textBlock in recognizedText.blocks) {
+    final panCardPattern = RegExp(r'[A-Z]{5}[0-9]{4}[A-Z]{1}');
+    final aadhaarCardPattern = RegExp(r'^\d{4}\s\d{4}\s\d{4}$');
+
+    for (final textBlock in recognizedText.blocks) {// textblock will have instance of TextBlock and textblock.text will have line wise text
+
       final text = textBlock.text;
-      final match = pattern.firstMatch(text);
-      if (match != null) {
-        print("in regrex ");
-        controller.text = text;
+      if (widget.type == 'pan') {
+        final match = panCardPattern.firstMatch(text);
+        if (match != null) {
+          controller.text = text;
+        }
+      } else if (widget.type == 'aadhaar') {
+        final match = aadhaarCardPattern.firstMatch(text);
+        if (match != null) {
+          controller.text = "Aadhaar Card Number is: ${text}";
+        }
       }
     }
-    if(controller.text == '')
-      controller.text = "not found";
-    // controller.text = recognizedText.text;
+    if (controller.text == '')
+      controller.text = "Wrong document uploaded/ image is not clear";
 
     //End processing state
     setState(() {
